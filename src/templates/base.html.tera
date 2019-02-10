@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>bin.</title>
+
+    <style>
+        * { box-sizing: border-box; }
+
+        html, body { margin: 0; }
+
+        body {
+            min-height: 100vh;
+            padding: 2rem;
+            background: #263238;
+            color: #B0BEC5;
+
+            display: flex;
+        }
+
+        {% block styles %}
+        {% endblock styles %}
+    </style>
+</head>
+<body>
+  {% block content %}
+  {% endblock content %}
+</body>
+</html>

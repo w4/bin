@@ -1,0 +1,59 @@
+{% extends "base" %}
+
+{% block styles %}
+    form { flex: 1; }
+
+    textarea {
+        height: 100%;
+        width: 100%;
+        background: none;
+        border: none;
+        color: inherit;
+        font-family: monospace;
+        resize: none;
+    }
+
+    button[type="submit"] {
+        position: absolute;
+        bottom: 1rem;
+        right: 1rem;
+
+        height: 3rem;
+        width: 3rem;
+        border: none;
+        border-radius: 50%;
+
+        background: #2196F3;
+
+        color: white;
+        font-size: 2rem;
+
+        cursor: pointer;
+    }
+
+    button[type="submit"].hidden { display: none; }
+{% endblock styles %}
+
+{% block content %}
+    <form action="/" method="post">
+        <textarea name="val" placeholder="bin something" autofocus autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
+
+        <button type="submit" title="&#x2318;+&#x23ce;">&#x270e;</button>
+    </form>
+
+    <script>
+        const form = document.querySelector('form');
+        const input = document.querySelector('textarea');
+        const button = document.querySelector('button[type="submit"]');
+
+        const onInput = () => button.classList.toggle('hidden', !input.value);
+        input.addEventListener('input', onInput);
+        onInput();
+
+        document.body.addEventListener('keydown', (e) => {
+            if (e.keyCode == 13 && e.metaKey) {
+                form.submit();
+            }
+        });
+    </script>
+{% endblock content %}

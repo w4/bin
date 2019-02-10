@@ -1,0 +1,16 @@
+{% extends "base" %}
+
+{% block styles %}
+    pre {
+        height: 100%;
+        width: 100%;
+        margin: 0;
+        overflow: scroll;
+        font-family: Courier;
+        line-height: 1.1;
+    }
+{% endblock styles %}
+
+{% block content %}
+    <pre><code>{{ content | safe }}</code></pre>
+{% endblock content %}
