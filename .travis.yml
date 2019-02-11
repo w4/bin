@@ -9,7 +9,7 @@ sudo: required
 env:
   global:
   # TODO Update this to match the name of your project.
-  - CRATE_NAME=trust
+  - CRATE_NAME=bin
 
 matrix:
   include:
@@ -18,8 +18,14 @@ matrix:
     rust: nightly
   - env: TARGET=armv7-unknown-linux-gnueabihf
     rust: nightly
-  - env: TARGET=x86_64-unknown-linux-gnu
+  - env: TARGET=x86_64-unknown-linux-gnu CC_X=gcc-7
     rust: nightly
+    addons:
+      apt:
+        packages:
+          - gcc-7
+        sources:
+          - ubuntu-toolchain-r-test
   - env: TARGET=x86_64-unknown-linux-musl
     rust: nightly
 
