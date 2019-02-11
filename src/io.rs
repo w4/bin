@@ -40,6 +40,6 @@ pub fn store_paste(content: String) -> String {
 }
 
 /// Get a paste by id. Returns `None` if the paste doesn't exist.
-pub fn get_paste<'a>(id: &str) -> Option<String> {
-    ENTRIES.read().unwrap().get(id).map(|f| f.clone())
+pub fn get_paste(id: &str) -> Option<String> {
+    ENTRIES.read().unwrap().get(id).cloned()
 }

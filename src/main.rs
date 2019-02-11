@@ -58,8 +58,8 @@ struct Render {
 }
 
 #[get("/<key>")]
-fn render<'a>(key: String) -> Option<Render> {
-    let mut splitter = key.splitn(2, ".");
+fn render(key: String) -> Option<Render> {
+    let mut splitter = key.splitn(2, '.');
     let key = splitter.next().unwrap();
     let ext = splitter.next();
 
