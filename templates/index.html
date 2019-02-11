@@ -1,4 +1,4 @@
-{% extends "base" %}
+{% extends "base.html" %}
 
 {% block styles %}
     form { flex: 1; }
@@ -51,7 +51,7 @@
         onInput();
 
         document.body.addEventListener('keydown', (e) => {
-            if (e.keyCode == 13 && e.metaKey) {
+            if (e.keyCode === 13 && e.metaKey) {
                 form.submit();
             }
         });

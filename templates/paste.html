@@ -1,4 +1,4 @@
-{% extends "base" %}
+{% extends "base.html" %}
 
 {% block styles %}
     pre {
@@ -12,5 +12,5 @@
 {% endblock styles %}
 
 {% block content %}
-    <pre><code>{{ content | safe }}</code></pre>
+    <pre><code>{{ content|safe }}</code></pre>
 {% endblock content %}
