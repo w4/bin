@@ -16,9 +16,7 @@ matrix:
   # Linux
   - env: TARGET=arm-unknown-linux-gnueabi
     rust: nightly
-  - env: TARGET=armv7-unknown-linux-gnueabihf
-    rust: nightly
-  - env: TARGET=x86_64-unknown-linux-gnu CC_X=gcc-7
+  - env: TARGET=x86_64-unknown-linux-gnu CC=gcc-7
     rust: nightly
     addons:
       apt:
