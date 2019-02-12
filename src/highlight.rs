@@ -7,6 +7,8 @@ use syntect::html::{styled_line_to_highlighted_html, IncludeBackground};
 
 /// Takes the content of a paste and the extension passed in by the viewer and will return the content
 /// highlighted in the appropriate format in HTML.
+///
+/// Returns `None` if the extension isn't supported.
 pub fn highlight(content: &str, ext: &str) -> Option<String> {
     lazy_static! {
         static ref SS: SyntaxSet = SyntaxSet::load_defaults_newlines();

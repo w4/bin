@@ -1,5 +1,4 @@
 #![feature(proc_macro_hygiene, decl_macro)]
-#![feature(uniform_paths)]
 #![feature(type_alias_enum_variants)]
 
 #[macro_use] extern crate lazy_static;
@@ -28,6 +27,10 @@ use rocket::http::ContentType;
 
 use std::io::Read;
 
+///
+/// Homepage
+///
+
 #[derive(Template)]
 #[template(path = "index.html")]
 struct Index {}
@@ -37,6 +40,10 @@ fn index() -> Index {
     Index {}
 }
 
+
+///
+/// Submit Paste
+///
 
 #[derive(FromForm)]
 struct IndexForm {
@@ -62,6 +69,10 @@ fn submit_raw(input: Data, host: HostHeader) -> std::io::Result<String> {
     }
 }
 
+
+///
+/// Show paste page
+///
 
 #[derive(Template)]
 #[template(path = "paste.html")]
