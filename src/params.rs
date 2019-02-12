@@ -24,12 +24,16 @@ impl<'a, 'r> FromRequest<'a, 'r> for IsPlaintextRequest {
     }
 }
 
-pub struct HostHeader(pub Option<String>);
+/// Gets the Host header from the request.
+///
+/// The inner value of this `HostHeader` will be `None` if there was no Host header
+/// on the request.
+pub struct HostHeader<'a>(pub Option<&'a str>);
 
-impl<'a, 'r> FromRequest<'a, 'r> for HostHeader {
+impl<'a, 'r> FromRequest<'a, 'r> for HostHeader<'a> {
     type Error = ();
 
-    fn from_request(request: &'a Request<'r>) -> Outcome<HostHeader, ()> {
-        Outcome::Success(HostHeader(request.headers().get_one("Host").map(|h| h.to_string())))
+    fn from_request(request: &'a Request<'r>) -> Outcome<HostHeader<'a>, ()> {
+        Outcome::Success(HostHeader(request.headers().get_one("Host")))
     }
 }
