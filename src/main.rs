@@ -11,15 +11,17 @@ extern crate askama_escape;
 
 mod io;
 mod highlight;
+mod params;
 
 use io::{store_paste, get_paste};
 use highlight::highlight;
+use params::{IsPlaintextRequest, HostHeader};
 
 use askama::Template;
 use askama_escape::{MarkupDisplay, Html};
 
-use rocket::{Request, Data};
-use rocket::request::{Form, FromRequest, Outcome};
+use rocket::Data;
+use rocket::request::Form;
 use rocket::response::Redirect;
 use rocket::response::content::Content;
 use rocket::http::ContentType;
@@ -48,10 +50,16 @@ fn submit(input: Form<IndexForm>) -> Redirect {
 }
 
 #[put("/", data = "<input>")]
-fn submit_raw(input: Data) -> std::io::Result<String> {
+fn submit_raw(input: Data, host: HostHeader) -> std::io::Result<String> {
     let mut data = String::new();
     input.open().take(1024 * 1000).read_to_string(&mut data)?;
-    Ok(format!("https://{}/{}", "localhost:8000", store_paste(data)))
+
+    let paste = store_paste(data);
+
+    match host.0 {
+        Some(host) => Ok(format!("https://{}/{}", host, paste)),
+        None => Ok(paste)
+    }
 }
 
 
@@ -59,28 +67,6 @@ fn submit_raw(input: Data) -> std::io::Result<String> {
 #[template(path = "paste.html")]
 struct Render {
     content: MarkupDisplay<Html, String>,
-}
-
-/// Holds a value that determines whether or not this request wanted a plaintext response.
-///
-/// We assume anything with the text/plain Accept or Content-Type headers want plaintext,
-/// and also anything calling us from the console or that we can't identify.
-struct IsPlaintextRequest(bool);
-impl<'a, 'r> FromRequest<'a, 'r> for IsPlaintextRequest {
-    type Error = ();
-
-    fn from_request(request: &'a Request<'r>) -> Outcome<IsPlaintextRequest, ()> {
-        if let Some(format) = request.format() {
-            if format.is_plain() {
-                return Outcome::Success(IsPlaintextRequest(true));
-            }
-        }
-
-        match request.headers().get_one("User-Agent").and_then(|u| u.splitn(2, '/').next()) {
-            None | Some("Wget") | Some("curl") | Some("HTTPie") => Outcome::Success(IsPlaintextRequest(true)),
-            _ => Outcome::Success(IsPlaintextRequest(false))
-        }
-    }
 }
 
 #[get("/<key>")]
