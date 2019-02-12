@@ -1,5 +1,6 @@
 #![feature(proc_macro_hygiene, decl_macro)]
 #![feature(uniform_paths)]
+#![feature(type_alias_enum_variants)]
 
 #[macro_use] extern crate lazy_static;
 
@@ -17,9 +18,11 @@ use highlight::highlight;
 use askama::Template;
 use askama_escape::{MarkupDisplay, Html};
 
+use rocket::{Request, Data};
+use rocket::request::{Form, FromRequest, Outcome};
 use rocket::response::Redirect;
-use rocket::request::Form;
-use rocket::Data;
+use rocket::response::content::Content;
+use rocket::http::ContentType;
 
 use std::io::Read;
 
@@ -37,10 +40,11 @@ fn index() -> Index {
 struct IndexForm {
     val: String
 }
+
 #[post("/", data = "<input>")]
 fn submit(input: Form<IndexForm>) -> Redirect {
     let id = store_paste(input.into_inner().val);
-    Redirect::to(format!("/{}", id))
+    Redirect::to(uri!(render: id))
 }
 
 #[put("/", data = "<input>")]
@@ -54,25 +58,51 @@ fn submit_raw(input: Data) -> std::io::Result<String> {
 #[derive(Template)]
 #[template(path = "paste.html")]
 struct Render {
-    content: MarkupDisplay<Html, String>
+    content: MarkupDisplay<Html, String>,
+}
+
+/// Holds a value that determines whether or not this request wanted a plaintext response.
+///
+/// We assume anything with the text/plain Accept or Content-Type headers want plaintext,
+/// and also anything calling us from the console or that we can't identify.
+struct IsPlaintextRequest(bool);
+impl<'a, 'r> FromRequest<'a, 'r> for IsPlaintextRequest {
+    type Error = ();
+
+    fn from_request(request: &'a Request<'r>) -> Outcome<IsPlaintextRequest, ()> {
+        if let Some(format) = request.format() {
+            if format.is_plain() {
+                return Outcome::Success(IsPlaintextRequest(true));
+            }
+        }
+
+        match request.headers().get_one("User-Agent").and_then(|u| u.splitn(2, '/').next()) {
+            None | Some("Wget") | Some("curl") | Some("HTTPie") => Outcome::Success(IsPlaintextRequest(true)),
+            _ => Outcome::Success(IsPlaintextRequest(false))
+        }
+    }
 }
 
 #[get("/<key>")]
-fn render(key: String) -> Option<Render> {
+fn render(key: String, plaintext: IsPlaintextRequest) -> Option<Content<String>> {
     let mut splitter = key.splitn(2, '.');
-    let key = splitter.next().unwrap();
+    let key = splitter.next()?;
     let ext = splitter.next();
 
     // get() returns a read-only lock, we're not going to be writing to this key
     // again so we can hold this for as long as we want
     let entry = get_paste(key)?;
 
-    Some(Render {
-        content: match ext {
-            None => MarkupDisplay::new_unsafe(entry, Html),
-            Some(extension) => MarkupDisplay::new_safe(highlight(&entry, extension)?, Html)
-        }
-    })
+    if plaintext.0 {
+        Some(Content(ContentType::Plain, entry))
+    } else {
+        Some(Content(ContentType::HTML, Render {
+            content: match ext {
+                None => MarkupDisplay::new_unsafe(entry, Html),
+                Some(extension) => MarkupDisplay::new_safe(highlight(&entry, extension)?, Html)
+            },
+        }.render().unwrap()))
+    }
 }
 
 
