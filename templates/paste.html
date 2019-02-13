@@ -6,11 +6,10 @@
         width: 100%;
         margin: 0;
         overflow: scroll;
-        font-family: Courier;
-        line-height: 1.1;
+        font-family: inherit;
+        font-size: 1rem;
+        line-height: inherit;
     }
 {% endblock styles %}
 
-{% block content %}
-    <pre><code>{{ content|safe }}</code></pre>
-{% endblock content %}
+{% block content %}<pre><code>{{ content|safe }}</code></pre>{% endblock content %}
