@@ -63,7 +63,7 @@ fn submit_raw(input: Data, host: HostHeader) -> std::io::Result<String> {
 
     let paste = store_paste(data);
 
-    match host.0 {
+    match *host {
         Some(host) => Ok(format!("https://{}/{}", host, paste)),
         None => Ok(paste)
     }
@@ -90,7 +90,7 @@ fn render(key: String, plaintext: IsPlaintextRequest) -> Option<Content<String>>
     // again so we can hold this for as long as we want
     let entry = get_paste(key)?;
 
-    if plaintext.0 {
+    if *plaintext {
         Some(Content(ContentType::Plain, entry))
     } else {
         Some(Content(ContentType::HTML, Render {
