@@ -17,13 +17,7 @@ matrix:
   include:
   # Linux
   - env: TARGET=arm-unknown-linux-gnueabi
-  - env: TARGET=x86_64-unknown-linux-gnu CC=gcc-7
-    addons:
-      apt:
-        packages:
-          - gcc-7
-        sources:
-          - ubuntu-toolchain-r-test
+  - env: TARGET=x86_64-unknown-linux-gnu
   - env: TARGET=x86_64-unknown-linux-musl
 
   # OSX
@@ -36,6 +30,9 @@ matrix:
 
   # Windows
   - env: TARGET=x86_64-pc-windows-gnu
+
+  allow_failures:
+    - env: TARGET=x86_64-unknown-linux-gnu
 
 before_install:
 - set -e
