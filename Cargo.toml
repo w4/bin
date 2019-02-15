@@ -1,6 +1,6 @@
 [package]
 name = "bin"
-version = "0.1.0"
+version = "1.0.0"
 authors = ["Jordan Doyle <jordan@doyle.la>"]
 edition = "2018"
 

@@ -70,7 +70,7 @@ dependencies = [
 
 [[package]]
 name = "bin"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "askama 0.8.0 (git+https://github.com/djc/askama?rev=fc5addc4)",
  "askama_escape 0.2.0 (git+https://github.com/djc/askama?rev=fc5addc4)",
