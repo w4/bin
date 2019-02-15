@@ -1,7 +1,7 @@
 use std::ops::Deref;
 
-use rocket::Request;
 use rocket::request::{FromRequest, Outcome};
+use rocket::Request;
 
 /// Holds a value that determines whether or not this request wanted a plaintext response.
 ///
@@ -27,9 +27,15 @@ impl<'a, 'r> FromRequest<'a, 'r> for IsPlaintextRequest {
             }
         }
 
-        match request.headers().get_one("User-Agent").and_then(|u| u.splitn(2, '/').next()) {
-            None | Some("Wget") | Some("curl") | Some("HTTPie") => Outcome::Success(IsPlaintextRequest(true)),
-            _ => Outcome::Success(IsPlaintextRequest(false))
+        match request
+            .headers()
+            .get_one("User-Agent")
+            .and_then(|u| u.splitn(2, '/').next())
+        {
+            None | Some("Wget") | Some("curl") | Some("HTTPie") => {
+                Outcome::Success(IsPlaintextRequest(true))
+            }
+            _ => Outcome::Success(IsPlaintextRequest(false)),
         }
     }
 }

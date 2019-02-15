@@ -1,29 +1,31 @@
 #![feature(proc_macro_hygiene, decl_macro)]
 #![feature(type_alias_enum_variants)]
 
-#[macro_use] extern crate lazy_static;
+#[macro_use]
+extern crate lazy_static;
 
-#[macro_use] extern crate rocket;
+#[macro_use]
+extern crate rocket;
 
 extern crate askama;
 extern crate askama_escape;
 
-mod io;
 mod highlight;
+mod io;
 mod params;
 
-use io::{store_paste, get_paste, generate_id};
 use highlight::highlight;
-use params::{IsPlaintextRequest, HostHeader};
+use io::{generate_id, get_paste, store_paste};
+use params::{HostHeader, IsPlaintextRequest};
 
 use askama::Template;
-use askama_escape::{MarkupDisplay, Html};
+use askama_escape::{Html, MarkupDisplay};
 
-use rocket::Data;
-use rocket::request::Form;
-use rocket::response::Redirect;
-use rocket::response::content::Content;
 use rocket::http::{ContentType, Status};
+use rocket::request::Form;
+use rocket::response::content::Content;
+use rocket::response::Redirect;
+use rocket::Data;
 
 use std::io::Read;
 
@@ -40,14 +42,13 @@ fn index() -> Index {
     Index {}
 }
 
-
 ///
 /// Submit Paste
 ///
 
 #[derive(FromForm)]
 struct IndexForm {
-    val: String
+    val: String,
 }
 
 #[post("/", data = "<input>")]
@@ -67,10 +68,9 @@ fn submit_raw(input: Data, host: HostHeader) -> std::io::Result<String> {
 
     match *host {
         Some(host) => Ok(format!("https://{}/{}", host, id)),
-        None => Ok(id)
+        None => Ok(id),
     }
 }
-
 
 ///
 /// Show paste page
@@ -100,16 +100,16 @@ fn render(key: String, plaintext: IsPlaintextRequest) -> Result<Content<String>,
                 None => MarkupDisplay::new_unsafe(entry, Html),
                 Some(extension) => highlight(&entry, extension)
                     .map(|h| MarkupDisplay::new_safe(h, Html))
-                    .ok_or_else(|| Status::NotFound)?
+                    .ok_or_else(|| Status::NotFound)?,
             },
         };
 
-        template.render()
+        template
+            .render()
             .map(|html| Content(ContentType::HTML, html))
             .map_err(|_| Status::InternalServerError)
     }
 }
-
 
 fn main() {
     rocket::ignite()
