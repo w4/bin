@@ -3,6 +3,8 @@
 
 dist: xenial
 language: rust
+rust:
+  - nightly
 services: docker
 sudo: required
 
@@ -15,26 +17,25 @@ matrix:
   include:
   # Linux
   - env: TARGET=arm-unknown-linux-gnueabi
-    rust: nightly
-  - env: TARGET=x86_64-unknown-linux-gnu
-    rust: nightly
+  - env: TARGET=x86_64-unknown-linux-gnu CC=gcc-7
+    addons:
+      apt:
+        packages:
+          - gcc-7
+        sources:
+          - ubuntu-toolchain-r-test
   - env: TARGET=x86_64-unknown-linux-musl
-    rust: nightly
 
   # OSX
   - env: TARGET=x86_64-apple-darwin
     os: osx
-    rust: nightly
 
   # *BSD
   - env: TARGET=x86_64-unknown-freebsd DISABLE_TESTS=1
-    rust: nightly
   - env: TARGET=x86_64-unknown-netbsd DISABLE_TESTS=1
-    rust: nightly
 
   # Windows
   - env: TARGET=x86_64-pc-windows-gnu
-    rust: nightly
 
 before_install:
 - set -e
