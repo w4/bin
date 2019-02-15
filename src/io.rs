@@ -30,17 +30,16 @@ fn purge_old() {
     }
 }
 
-/// Generates a randomly generated id, stores the given paste under that id and then returns the id.
-///
-/// Uses gpw to generate a (most likely) pronounceable URL.
-pub fn store_paste(content: String) -> String {
+/// Generates a 'pronounceable' random ID using gpw
+pub fn generate_id() -> String {
     thread_local!(static KEYGEN: RefCell<gpw::PasswordGenerator> = RefCell::new(gpw::PasswordGenerator::default()));
-    let id = KEYGEN.with(|k| k.borrow_mut().next().unwrap());
+    KEYGEN.with(|k| k.borrow_mut().next().unwrap())
+}
 
+/// Stores a paste under the given id
+pub fn store_paste(id: String, content: String) {
     purge_old();
-    ENTRIES.write().unwrap().insert(id.clone(), content);
-
-    id
+    ENTRIES.write().unwrap().insert(id, content);
 }
 
 /// Get a paste by id.

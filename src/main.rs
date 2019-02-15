@@ -12,7 +12,7 @@ mod io;
 mod highlight;
 mod params;
 
-use io::{store_paste, get_paste};
+use io::{store_paste, get_paste, generate_id};
 use highlight::highlight;
 use params::{IsPlaintextRequest, HostHeader};
 
@@ -52,7 +52,8 @@ struct IndexForm {
 
 #[post("/", data = "<input>")]
 fn submit(input: Form<IndexForm>) -> Redirect {
-    let id = store_paste(input.into_inner().val);
+    let id = generate_id();
+    store_paste(id.clone(), input.into_inner().val);
     Redirect::to(uri!(render: id))
 }
 
@@ -61,11 +62,12 @@ fn submit_raw(input: Data, host: HostHeader) -> std::io::Result<String> {
     let mut data = String::new();
     input.open().take(1024 * 1000).read_to_string(&mut data)?;
 
-    let paste = store_paste(data);
+    let id = generate_id();
+    store_paste(id.clone(), data);
 
     match *host {
-        Some(host) => Ok(format!("https://{}/{}", host, paste)),
-        None => Ok(paste)
+        Some(host) => Ok(format!("https://{}/{}", host, id)),
+        None => Ok(id)
     }
 }
 
