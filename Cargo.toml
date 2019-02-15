@@ -10,6 +10,7 @@ askama = { git = "https://github.com/djc/askama", rev = "fc5addc4", features = [
 askama_escape = { git = "https://github.com/djc/askama", rev = "fc5addc4" }
 rocket = "0.4"
 lazy_static = "1.2"
+rand = "0.6"
 gpw = "0.1"
 syntect = "3.0"
 chashmap = { git = "https://github.com/redox-os/tfs", rev = "b3e7cae1" }

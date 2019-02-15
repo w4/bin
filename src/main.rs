@@ -23,7 +23,7 @@ use rocket::Data;
 use rocket::request::Form;
 use rocket::response::Redirect;
 use rocket::response::content::Content;
-use rocket::http::ContentType;
+use rocket::http::{ContentType, Status};
 
 use std::io::Read;
 
@@ -83,24 +83,30 @@ struct Render {
 }
 
 #[get("/<key>")]
-fn render(key: String, plaintext: IsPlaintextRequest) -> Option<Content<String>> {
+fn render(key: String, plaintext: IsPlaintextRequest) -> Result<Content<String>, Status> {
     let mut splitter = key.splitn(2, '.');
-    let key = splitter.next()?;
+    let key = splitter.next().ok_or_else(|| Status::NotFound)?;
     let ext = splitter.next();
 
     // get() returns a read-only lock, we're not going to be writing to this key
     // again so we can hold this for as long as we want
-    let entry = get_paste(key)?;
+    let entry = get_paste(key).ok_or_else(|| Status::NotFound)?;
 
     if *plaintext {
-        Some(Content(ContentType::Plain, entry))
+        Ok(Content(ContentType::Plain, entry))
     } else {
-        Some(Content(ContentType::HTML, Render {
+        let template = Render {
             content: match ext {
                 None => MarkupDisplay::new_unsafe(entry, Html),
-                Some(extension) => MarkupDisplay::new_safe(highlight(&entry, extension)?, Html)
+                Some(extension) => highlight(&entry, extension)
+                    .map(|h| MarkupDisplay::new_safe(h, Html))
+                    .ok_or_else(|| Status::NotFound)?
             },
-        }.render().unwrap()))
+        };
+
+        template.render()
+            .map(|html| Content(ContentType::HTML, html))
+            .map_err(|_| Status::InternalServerError)
     }
 }
 
