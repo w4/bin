@@ -7,7 +7,7 @@ A paste bin that's actually minimalist. No database requirement, no commenting f
 
 ##### so how do you get bin?
 
-Download the latest version from the [releases](https://github.com/w4/bin/releases) page, extract it and run the `./bin` executable. You can compile it from source using Cargo:
+Download the latest version from the [releases](https://github.com/w4/bin/releases) page, extract it and run the `./bin` executable. You can also compile it from source using Cargo if you swing that way:
 
 ```bash
 # nix-shell provides an environment with rust/cargo installed
