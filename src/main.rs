@@ -8,7 +8,6 @@ extern crate lazy_static;
 extern crate rocket;
 
 extern crate askama;
-extern crate askama_escape;
 
 mod highlight;
 mod io;
@@ -18,8 +17,7 @@ use highlight::highlight;
 use io::{generate_id, get_paste, store_paste};
 use params::{HostHeader, IsPlaintextRequest};
 
-use askama::Template;
-use askama_escape::{Html, MarkupDisplay};
+use askama::{MarkupDisplay, Template};
 
 use rocket::http::{ContentType, Status};
 use rocket::request::Form;
@@ -35,11 +33,14 @@ use std::io::Read;
 
 #[derive(Template)]
 #[template(path = "index.html")]
-struct Index {}
+struct Index;
 
 #[get("/")]
-fn index() -> Index {
-    Index {}
+fn index() -> Result<rocket::response::content::Html<String>, Status> {
+    Index
+        .render()
+        .map(|h| rocket::response::content::Html(h))
+        .map_err(|_| Status::InternalServerError)
 }
 
 ///
@@ -79,7 +80,7 @@ fn submit_raw(input: Data, host: HostHeader) -> std::io::Result<String> {
 #[derive(Template)]
 #[template(path = "paste.html")]
 struct ShowPaste {
-    content: MarkupDisplay<Html, String>,
+    content: MarkupDisplay<String>,
 }
 
 #[get("/<key>")]
@@ -96,9 +97,9 @@ fn show_paste(key: String, plaintext: IsPlaintextRequest) -> Result<Content<Stri
         Ok(Content(ContentType::Plain, entry))
     } else {
         let content = match ext {
-            None => MarkupDisplay::new_unsafe(entry, Html),
+            None => MarkupDisplay::Unsafe(entry),
             Some(extension) => highlight(&entry, extension)
-                .map(|h| MarkupDisplay::new_safe(h, Html))
+                .map(|h| MarkupDisplay::Safe(h))
                 .ok_or_else(|| Status::NotFound)?,
         };
 

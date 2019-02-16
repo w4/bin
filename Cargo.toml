@@ -6,14 +6,13 @@ edition = "2018"
 
 [dependencies]
 linked-hash-map = "0.5"
-rocket = "0.4"
-askama = { git = "https://github.com/djc/askama", rev = "fc5addc4", features = ["with-rocket"] }
-askama_escape = { git = "https://github.com/djc/askama", rev = "fc5addc4" }
+rocket = { version = "0.4", default-features = false }
+askama = "0.7"
 lazy_static = "1.2"
-rand = "0.6"
+rand = { version = "0.6", features = ["nightly"] }
 gpw = "0.1"
 syntect = "3.0"
-serde_derive = { version = "1.0" }
+serde_derive = "1.0"
 
 [profile.release]
 lto = true
