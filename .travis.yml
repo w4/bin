@@ -31,9 +31,6 @@ matrix:
   # Windows
   - env: TARGET=x86_64-pc-windows-gnu
 
-  allow_failures:
-    - env: TARGET=x86_64-unknown-linux-gnu
-
 before_install:
 - set -e
 - rustup self update
