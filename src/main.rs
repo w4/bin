@@ -55,7 +55,7 @@ struct IndexForm {
 fn submit(input: Form<IndexForm>) -> Redirect {
     let id = generate_id();
     store_paste(id.clone(), input.into_inner().val);
-    Redirect::to(uri!(render: id))
+    Redirect::to(uri!(show_paste: id))
 }
 
 #[put("/", data = "<input>")]
@@ -67,7 +67,7 @@ fn submit_raw(input: Data, host: HostHeader) -> std::io::Result<String> {
     store_paste(id.clone(), data);
 
     match *host {
-        Some(host) => Ok(format!("https://{}/{}", host, id)),
+        Some(host) => Ok(format!("https://{}{}", host, uri!(show_paste: id))),
         None => Ok(id),
     }
 }
@@ -78,12 +78,12 @@ fn submit_raw(input: Data, host: HostHeader) -> std::io::Result<String> {
 
 #[derive(Template)]
 #[template(path = "paste.html")]
-struct Render {
+struct ShowPaste {
     content: MarkupDisplay<Html, String>,
 }
 
 #[get("/<key>")]
-fn render(key: String, plaintext: IsPlaintextRequest) -> Result<Content<String>, Status> {
+fn show_paste(key: String, plaintext: IsPlaintextRequest) -> Result<Content<String>, Status> {
     let mut splitter = key.splitn(2, '.');
     let key = splitter.next().ok_or_else(|| Status::NotFound)?;
     let ext = splitter.next();
@@ -95,16 +95,14 @@ fn render(key: String, plaintext: IsPlaintextRequest) -> Result<Content<String>,
     if *plaintext {
         Ok(Content(ContentType::Plain, entry))
     } else {
-        let template = Render {
-            content: match ext {
-                None => MarkupDisplay::new_unsafe(entry, Html),
-                Some(extension) => highlight(&entry, extension)
-                    .map(|h| MarkupDisplay::new_safe(h, Html))
-                    .ok_or_else(|| Status::NotFound)?,
-            },
+        let content = match ext {
+            None => MarkupDisplay::new_unsafe(entry, Html),
+            Some(extension) => highlight(&entry, extension)
+                .map(|h| MarkupDisplay::new_safe(h, Html))
+                .ok_or_else(|| Status::NotFound)?,
         };
 
-        template
+        ShowPaste { content }
             .render()
             .map(|html| Content(ContentType::HTML, html))
             .map_err(|_| Status::InternalServerError)
@@ -113,6 +111,6 @@ fn render(key: String, plaintext: IsPlaintextRequest) -> Result<Content<String>,
 
 fn main() {
     rocket::ignite()
-        .mount("/", routes![index, submit, submit_raw, render])
+        .mount("/", routes![index, submit, submit_raw, show_paste])
         .launch();
 }
