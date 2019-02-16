@@ -1,6 +1,9 @@
 [package]
 name = "bin"
 version = "1.0.1"
+description = "a paste bin."
+repository = "https://github.com/w4/bin"
+license = "WTFPL OR 0BSD"
 authors = ["Jordan Doyle <jordan@doyle.la>"]
 edition = "2018"
 
@@ -18,3 +21,9 @@ serde_derive = "1.0"
 lto = true
 codegen-units = 1
 incremental = false
+
+[badges]
+travis-ci = { repository = "w4/bin" }
+is-it-maintained-issue-resolution = { repository = "w4/bin" }
+is-it-maintained-open-issues = { repository = "w4/bin" }
+maintenance = { status = "passively-maintained" }
