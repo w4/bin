@@ -21,7 +21,7 @@ use askama::{MarkupDisplay, Template};
 
 use rocket::http::{ContentType, Status};
 use rocket::request::Form;
-use rocket::response::content::Content;
+use rocket::response::content::{Content, Html};
 use rocket::response::Redirect;
 use rocket::Data;
 
@@ -36,10 +36,10 @@ use std::io::Read;
 struct Index;
 
 #[get("/")]
-fn index() -> Result<rocket::response::content::Html<String>, Status> {
+fn index() -> Result<Html<String>, Status> {
     Index
         .render()
-        .map(|h| rocket::response::content::Html(h))
+        .map(|h| Html(h))
         .map_err(|_| Status::InternalServerError)
 }
 
