@@ -19,6 +19,7 @@ main() {
 
     cross rustc --bin bin --target $TARGET --release -- -C lto
 
+    strip target/$TARGET/release/bin
     cp target/$TARGET/release/bin $stage/
 
     cd $stage
