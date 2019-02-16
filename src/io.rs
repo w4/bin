@@ -41,13 +41,11 @@ fn purge_old() {
 /// Generates a 'pronounceable' random ID using gpw
 pub fn generate_id() -> String {
     thread_local!(static KEYGEN: RefCell<gpw::PasswordGenerator> = RefCell::new(gpw::PasswordGenerator::default()));
-    KEYGEN.with(|k| {
-        k.borrow_mut().next().unwrap_or_else(|| {
-            thread_rng()
-                .sample_iter(&Alphanumeric)
-                .take(6)
-                .collect::<String>()
-        })
+    KEYGEN.with(|k| k.borrow_mut().next()).unwrap_or_else(|| {
+        thread_rng()
+            .sample_iter(&Alphanumeric)
+            .take(6)
+            .collect::<String>()
     })
 }
 
