@@ -3,7 +3,7 @@ a paste bin.
 
 A paste bin that's actually minimalist. No database requirement, no commenting functionality, no self-destructing or time bomb messages and no social media integration—just an application to quickly send snippits of text to people.
 
-[bin](https://bin.doyle.la/) is written in Rust in around 100 lines of code. It's fast, it's simple, there's code highlighting and you can ⌘+A without going to the 'plain' page. It's revolutionary in the paste bin industry, disrupting markets and pushing boundaries never seen before.
+[bin](https://bin.doyle.la/) is written in Rust in around 200 lines of code. It's fast, it's simple, there's code highlighting and you can ⌘+A without going to the 'plain' page. It's revolutionary in the paste bin industry, disrupting markets and pushing boundaries never seen before.
 
 ##### so how do you get bin?
 
