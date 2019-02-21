@@ -55,8 +55,9 @@ struct IndexForm {
 #[post("/", data = "<input>")]
 fn submit(input: Form<IndexForm>) -> Redirect {
     let id = generate_id();
-    store_paste(id.clone(), input.into_inner().val);
-    Redirect::to(uri!(show_paste: id))
+    let uri = uri!(show_paste: &id);
+    store_paste(id, input.into_inner().val);
+    Redirect::to(uri)
 }
 
 #[put("/", data = "<input>")]
@@ -65,11 +66,13 @@ fn submit_raw(input: Data, host: HostHeader) -> std::io::Result<String> {
     input.open().take(1024 * 1000).read_to_string(&mut data)?;
 
     let id = generate_id();
-    store_paste(id.clone(), data);
+    let uri = uri!(show_paste: &id);
+
+    store_paste(id, data);
 
     match *host {
-        Some(host) => Ok(format!("https://{}{}", host, uri!(show_paste: id))),
-        None => Ok(id),
+        Some(host) => Ok(format!("https://{}{}", host, uri)),
+        None => Ok(format!("{}", uri)),
     }
 }
 
