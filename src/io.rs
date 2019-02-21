@@ -1,5 +1,6 @@
 extern crate gpw;
 extern crate linked_hash_map;
+extern crate owning_ref;
 extern crate rand;
 
 use rand::distributions::Alphanumeric;
@@ -7,9 +8,11 @@ use rand::{thread_rng, Rng};
 
 use linked_hash_map::LinkedHashMap;
 
+use owning_ref::RwLockReadGuardRef;
+
 use std::cell::RefCell;
 use std::env;
-use std::sync::RwLock;
+use std::sync::{PoisonError, RwLock};
 
 lazy_static! {
     static ref ENTRIES: RwLock<LinkedHashMap<String, String>> = RwLock::new(LinkedHashMap::new());
@@ -25,12 +28,12 @@ lazy_static! {
 ///
 /// During the purge, `ENTRIES` is locked and the current thread will block.
 fn purge_old() {
-    let entries_len = ENTRIES.read().unwrap_or_else(|p| p.into_inner()).len();
+    let entries_len = ENTRIES.read().unwrap_or_else(PoisonError::into_inner).len();
 
     if entries_len > *BUFFER_SIZE {
         let to_remove = entries_len - *BUFFER_SIZE;
 
-        let mut entries = ENTRIES.write().unwrap_or_else(|p| p.into_inner());
+        let mut entries = ENTRIES.write().unwrap_or_else(PoisonError::into_inner);
 
         for _ in 0..to_remove {
             entries.pop_front();
@@ -54,17 +57,19 @@ pub fn store_paste(id: String, content: String) {
     purge_old();
     ENTRIES
         .write()
-        .unwrap_or_else(|p| p.into_inner())
+        .unwrap_or_else(PoisonError::into_inner)
         .insert(id, content);
 }
 
 /// Get a paste by id.
 ///
 /// Returns `None` if the paste doesn't exist.
-pub fn get_paste(id: &str) -> Option<String> {
-    ENTRIES
-        .read()
-        .unwrap_or_else(|p| p.into_inner())
-        .get(id)
-        .cloned()
+pub fn get_paste(id: &str) -> Option<RwLockReadGuardRef<LinkedHashMap<String, String>, String>> {
+    let or = RwLockReadGuardRef::new(ENTRIES.read().unwrap_or_else(PoisonError::into_inner));
+
+    if or.contains_key(id) {
+        Some(or.map(|x| x.get(id).unwrap()))
+    } else {
+        None
+    }
 }

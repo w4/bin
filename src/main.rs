@@ -17,7 +17,7 @@ use highlight::highlight;
 use io::{generate_id, get_paste, store_paste};
 use params::{HostHeader, IsPlaintextRequest};
 
-use askama::{MarkupDisplay, Template};
+use askama::{Html as AskamaHtml, MarkupDisplay, Template};
 
 use rocket::http::{ContentType, Status};
 use rocket::request::Form;
@@ -25,6 +25,7 @@ use rocket::response::content::{Content, Html};
 use rocket::response::Redirect;
 use rocket::Data;
 
+use std::borrow::Cow;
 use std::io::Read;
 
 ///
@@ -39,7 +40,7 @@ struct Index;
 fn index() -> Result<Html<String>, Status> {
     Index
         .render()
-        .map(|h| Html(h))
+        .map(Html)
         .map_err(|_| Status::InternalServerError)
 }
 
@@ -82,8 +83,8 @@ fn submit_raw(input: Data, host: HostHeader) -> std::io::Result<String> {
 
 #[derive(Template)]
 #[template(path = "paste.html")]
-struct ShowPaste {
-    content: MarkupDisplay<String>,
+struct ShowPaste<'a> {
+    content: MarkupDisplay<AskamaHtml, Cow<'a, String>>,
 }
 
 #[get("/<key>")]
@@ -94,22 +95,24 @@ fn show_paste(key: String, plaintext: IsPlaintextRequest) -> Result<Content<Stri
 
     // get() returns a read-only lock, we're not going to be writing to this key
     // again so we can hold this for as long as we want
-    let entry = get_paste(key).ok_or_else(|| Status::NotFound)?;
+    let entry = &*get_paste(key).ok_or_else(|| Status::NotFound)?;
 
     if *plaintext {
-        Ok(Content(ContentType::Plain, entry))
+        Ok(Content(ContentType::Plain, entry.to_string()))
     } else {
         let content = match ext {
-            None => MarkupDisplay::Unsafe(entry),
-            Some(extension) => highlight(&entry, extension)
-                .map(|h| MarkupDisplay::Safe(h))
-                .ok_or_else(|| Status::NotFound)?,
+            Some(extension) => match highlight(&entry, extension) {
+                Some(html) => MarkupDisplay::new_safe(Cow::Owned(html), AskamaHtml),
+                None => return Err(Status::NotFound),
+            },
+            None => MarkupDisplay::new_unsafe(Cow::Borrowed(entry), AskamaHtml),
         };
 
-        ShowPaste { content }
-            .render()
-            .map(|html| Content(ContentType::HTML, html))
-            .map_err(|_| Status::InternalServerError)
+        let template = ShowPaste { content };
+        match template.render() {
+            Ok(html) => Ok(Content(ContentType::HTML, html)),
+            Err(_) => Err(Status::InternalServerError),
+        }
     }
 }
 

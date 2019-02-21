@@ -8,9 +8,10 @@ authors = ["Jordan Doyle <jordan@doyle.la>"]
 edition = "2018"
 
 [dependencies]
+owning_ref = "0.4"
 linked-hash-map = "0.5"
 rocket = { version = "0.4", default-features = false }
-askama = "0.7"
+askama = "0.8"
 lazy_static = "1.2"
 rand = { version = "0.6", features = ["nightly"] }
 gpw = "0.1"
