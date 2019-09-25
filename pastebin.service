@@ -1,0 +1,16 @@
+[Unit]
+Description=A pastebin that's actually minimalist
+After=network.target
+
+[Service]
+Type=simple
+User=pastebin
+Group=pastebin
+ExecStart=/usr/local/bin/bin
+Restart=on-failure
+RestartSec=10s
+Environment=ROCKET_ADDRESS=localhost ROCKET_PORT=8220
+#MemoryMax=16M  # Auto restart the service when the threshold is reached
+
+[Install]
+WantedBy=multi-user.target
