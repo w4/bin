@@ -1,6 +1,6 @@
 [package]
 name = "bin"
-version = "1.0.2"
+version = "1.0.3"
 description = "a paste bin."
 repository = "https://github.com/w4/bin"
 license = "WTFPL OR 0BSD"
