@@ -1,5 +1,4 @@
 #![feature(proc_macro_hygiene, decl_macro)]
-#![feature(type_alias_enum_variants)]
 
 #[macro_use]
 extern crate lazy_static;
@@ -19,7 +18,7 @@ use params::{HostHeader, IsPlaintextRequest};
 
 use askama::{Html as AskamaHtml, MarkupDisplay, Template};
 
-use rocket::http::{ContentType, Status};
+use rocket::http::{ContentType, RawStr, Status};
 use rocket::request::Form;
 use rocket::response::content::{Content, Html};
 use rocket::response::Redirect;
@@ -100,13 +99,21 @@ fn show_paste(key: String, plaintext: IsPlaintextRequest) -> Result<Content<Stri
     if *plaintext {
         Ok(Content(ContentType::Plain, entry.to_string()))
     } else {
-        let content = match ext {
+        let code_highlighted = match ext {
             Some(extension) => match highlight(&entry, extension) {
-                Some(html) => MarkupDisplay::new_safe(Cow::Owned(html), AskamaHtml),
+                Some(html) => html,
                 None => return Err(Status::NotFound),
             },
-            None => MarkupDisplay::new_unsafe(Cow::Borrowed(entry), AskamaHtml),
+            None => String::from(RawStr::from_str(entry).html_escape()),
         };
+
+        // Add <code> tags to enable line numbering with CSS 
+        let html = format!(
+            "<code>{}</code>",
+            code_highlighted.replace("\n", "</code><code>")
+        );
+
+        let content = MarkupDisplay::new_safe(Cow::Borrowed(&html), AskamaHtml);
 
         let template = ShowPaste { content };
         match template.render() {

@@ -9,7 +9,23 @@
         font-family: inherit;
         font-size: 1rem;
         line-height: inherit;
+        counter-reset: line;        
     }
+    code {
+        counter-increment: line;
+    }
+      
+    code::before {
+        content: counter(line);
+        display: inline-block;
+        width: 2em; /* Fixed width */
+        padding: 0 1em 0.3em 0;
+        margin-right: .5em;
+        color: #888;
+        -webkit-user-select: none;
+    }
+
+
 {% endblock styles %}
 
-{% block content %}<pre><code>{{ content|safe }}</code></pre>{% endblock content %}
+{% block content %}<pre>{{ content|safe }}</pre>{% endblock content %}
