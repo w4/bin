@@ -19,8 +19,8 @@ main() {
 
     cross rustc --bin bin --target $TARGET --release -- -C lto
 
-    [ "$TARGET" == "arm-unknown-linux-gnueabi" ] || [ "$TARGET" == "x86_64-pc-windows-gnu" ] || strip target/$TARGET/release/bin
-    cp target/$TARGET/release/bin $stage/
+    [ "$TARGET" = "arm-unknown-linux-gnueabi" ] || [ "$TARGET" = "x86_64-pc-windows-gnu" ] || strip target/$TARGET/release/bin
+    cp target/$TARGET/release/* $stage/
 
     cd $stage
     tar czf $src/$CRATE_NAME-$TRAVIS_TAG-$TARGET.tar.gz *

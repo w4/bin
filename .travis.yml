@@ -33,6 +33,7 @@ matrix:
 
 before_install:
 - set -e
+- command -v apt-get && sudo apt-get install -y libclang-dev
 - rustup self update
 
 install:
