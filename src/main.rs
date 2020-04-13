@@ -27,6 +27,8 @@ use rocket::Data;
 use std::borrow::Cow;
 use std::io::Read;
 
+use tokio::io::AsyncReadExt;
+
 ///
 /// Homepage
 ///
@@ -53,22 +55,24 @@ struct IndexForm {
 }
 
 #[post("/", data = "<input>")]
-fn submit(input: Form<IndexForm>) -> Redirect {
+async fn submit(input: Form<IndexForm>) -> Redirect {
     let id = generate_id();
     let uri = uri!(show_paste: &id);
-    store_paste(id, input.into_inner().val);
+    store_paste(id, input.into_inner().val).await;
     Redirect::to(uri)
 }
 
 #[put("/", data = "<input>")]
-fn submit_raw(input: Data, host: HostHeader) -> std::io::Result<String> {
+async fn submit_raw(input: Data, host: HostHeader<'_>) -> Result<String, Status> {
     let mut data = String::new();
-    input.open().take(1024 * 1000).read_to_string(&mut data)?;
+    input.open().take(1024 * 1000)
+        .read_to_string(&mut data).await
+        .map_err(|_| Status::InternalServerError)?;
 
     let id = generate_id();
     let uri = uri!(show_paste: &id);
 
-    store_paste(id, data);
+    store_paste(id, data).await;
 
     match *host {
         Some(host) => Ok(format!("https://{}{}", host, uri)),
@@ -87,14 +91,12 @@ struct ShowPaste<'a> {
 }
 
 #[get("/<key>")]
-fn show_paste(key: String, plaintext: IsPlaintextRequest) -> Result<Content<String>, Status> {
+async fn show_paste(key: String, plaintext: IsPlaintextRequest) -> Result<Content<String>, Status> {
     let mut splitter = key.splitn(2, '.');
     let key = splitter.next().ok_or_else(|| Status::NotFound)?;
     let ext = splitter.next();
 
-    // get() returns a read-only lock, we're not going to be writing to this key
-    // again so we can hold this for as long as we want
-    let entry = &*get_paste(key).ok_or_else(|| Status::NotFound)?;
+    let entry = &*get_paste(key).await.ok_or_else(|| Status::NotFound)?;
 
     if *plaintext {
         Ok(Content(ContentType::Plain, entry.to_string()))
