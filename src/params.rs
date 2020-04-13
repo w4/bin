@@ -3,6 +3,8 @@ use std::ops::Deref;
 use rocket::request::{FromRequest, Outcome};
 use rocket::Request;
 
+use async_trait::async_trait;
+
 /// Holds a value that determines whether or not this request wanted a plaintext response.
 ///
 /// We assume anything with the text/plain Accept or Content-Type headers want plaintext,
@@ -17,10 +19,11 @@ impl Deref for IsPlaintextRequest {
     }
 }
 
+#[async_trait]
 impl<'a, 'r> FromRequest<'a, 'r> for IsPlaintextRequest {
     type Error = ();
 
-    fn from_request(request: &'a Request<'r>) -> Outcome<IsPlaintextRequest, ()> {
+    async fn from_request(request: &'a Request<'r>) -> Outcome<IsPlaintextRequest, ()> {
         if let Some(format) = request.format() {
             if format.is_plain() {
                 return Outcome::Success(IsPlaintextRequest(true));
@@ -54,10 +57,11 @@ impl<'a> Deref for HostHeader<'a> {
     }
 }
 
+#[async_trait]
 impl<'a, 'r> FromRequest<'a, 'r> for HostHeader<'a> {
     type Error = ();
 
-    fn from_request(request: &'a Request<'r>) -> Outcome<HostHeader<'a>, ()> {
+    async fn from_request(request: &'a Request<'r>) -> Outcome<HostHeader<'a>, ()> {
         Outcome::Success(HostHeader(request.headers().get_one("Host")))
     }
 }

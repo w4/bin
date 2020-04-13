@@ -8,11 +8,15 @@ use rand::{thread_rng, Rng};
 
 use linked_hash_map::LinkedHashMap;
 
-use owning_ref::RwLockReadGuardRef;
+use owning_ref::OwningRef;
 
 use std::cell::RefCell;
 use std::env;
-use std::sync::{PoisonError, RwLock};
+use std::sync::{PoisonError};
+
+use tokio::sync::{RwLock, RwLockReadGuard};
+
+type RwLockReadGuardRef<'a, T, U = T> = OwningRef<Box<RwLockReadGuard<'a, T>>, U>;
 
 lazy_static! {
     static ref ENTRIES: RwLock<LinkedHashMap<String, String>> = RwLock::new(LinkedHashMap::new());
@@ -27,13 +31,13 @@ lazy_static! {
 /// `ENTRIES.len() - BIN_BUFFER_SIZE` elements will be popped off the front of the map.
 ///
 /// During the purge, `ENTRIES` is locked and the current thread will block.
-fn purge_old() {
-    let entries_len = ENTRIES.read().unwrap_or_else(PoisonError::into_inner).len();
+async fn purge_old() {
+    let entries_len = ENTRIES.read().await.len();
 
     if entries_len > *BUFFER_SIZE {
         let to_remove = entries_len - *BUFFER_SIZE;
 
-        let mut entries = ENTRIES.write().unwrap_or_else(PoisonError::into_inner);
+        let mut entries = ENTRIES.write().await;
 
         for _ in 0..to_remove {
             entries.pop_front();
@@ -44,6 +48,7 @@ fn purge_old() {
 /// Generates a 'pronounceable' random ID using gpw
 pub fn generate_id() -> String {
     thread_local!(static KEYGEN: RefCell<gpw::PasswordGenerator> = RefCell::new(gpw::PasswordGenerator::default()));
+
     KEYGEN.with(|k| k.borrow_mut().next()).unwrap_or_else(|| {
         thread_rng()
             .sample_iter(&Alphanumeric)
@@ -53,19 +58,21 @@ pub fn generate_id() -> String {
 }
 
 /// Stores a paste under the given id
-pub fn store_paste(id: String, content: String) {
-    purge_old();
+pub async fn store_paste(id: String, content: String) {
+    purge_old().await;
+
     ENTRIES
         .write()
-        .unwrap_or_else(PoisonError::into_inner)
+        .await
         .insert(id, content);
 }
 
 /// Get a paste by id.
 ///
 /// Returns `None` if the paste doesn't exist.
-pub fn get_paste(id: &str) -> Option<RwLockReadGuardRef<LinkedHashMap<String, String>, String>> {
-    let or = RwLockReadGuardRef::new(ENTRIES.read().unwrap_or_else(PoisonError::into_inner));
+pub async fn get_paste(id: &str) -> Option<RwLockReadGuardRef<'_, LinkedHashMap<String, String>, String>> {
+    // need to box the guard until owning_ref understands Pin is a stable address
+    let or = RwLockReadGuardRef::new(Box::new(ENTRIES.read().await));
 
     if or.contains_key(id) {
         Some(or.map(|x| x.get(id).unwrap()))

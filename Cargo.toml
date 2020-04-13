@@ -10,13 +10,15 @@ edition = "2018"
 [dependencies]
 owning_ref = "0.4"
 linked-hash-map = "0.5"
-rocket = { version = "0.4.4", default-features = false }
+rocket = { git = "https://github.com/SergioBenitez/Rocket", branch = "async" }
 askama = "0.9"
 lazy_static = "1.4"
 rand = { version = "0.7", features = ["nightly"] }
 gpw = "0.1"
 syntect = "4.1"
 serde_derive = "1.0"
+tokio = { version = "0.2", features = ["sync"] }
+async-trait = "0.1"
 
 [profile.release]
 lto = true
