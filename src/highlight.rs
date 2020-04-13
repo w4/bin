@@ -1,9 +1,9 @@
-extern crate syntect;
-
 use syntect::easy::HighlightLines;
 use syntect::highlighting::ThemeSet;
 use syntect::html::{styled_line_to_highlighted_html, IncludeBackground};
 use syntect::parsing::SyntaxSet;
+
+use lazy_static::lazy_static;
 
 /// Takes the content of a paste and the extension passed in by the viewer and will return the content
 /// highlighted in the appropriate format in HTML.

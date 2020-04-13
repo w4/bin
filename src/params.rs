@@ -1,9 +1,10 @@
 use std::ops::Deref;
 
-use rocket::request::{FromRequest, Outcome};
-use rocket::Request;
+use actix_web::{FromRequest, HttpRequest, HttpMessage};
+use actix_web::dev::Payload;
+use actix_web::http::header;
 
-use async_trait::async_trait;
+use futures::future::ok;
 
 /// Holds a value that determines whether or not this request wanted a plaintext response.
 ///
@@ -19,26 +20,25 @@ impl Deref for IsPlaintextRequest {
     }
 }
 
-#[async_trait]
-impl<'a, 'r> FromRequest<'a, 'r> for IsPlaintextRequest {
-    type Error = ();
+impl FromRequest for IsPlaintextRequest {
+    type Error = actix_web::Error;
+    type Future = futures::future::Ready<Result<Self, Self::Error>>;
+    type Config = ();
 
-    async fn from_request(request: &'a Request<'r>) -> Outcome<IsPlaintextRequest, ()> {
-        if let Some(format) = request.format() {
-            if format.is_plain() {
-                return Outcome::Success(IsPlaintextRequest(true));
-            }
+    fn from_request(req: &HttpRequest, _payload: &mut Payload) -> Self::Future {
+        if req.content_type() == "text/plain" {
+            return ok(IsPlaintextRequest(true));
         }
 
-        match request
+        match req
             .headers()
-            .get_one("User-Agent")
-            .and_then(|u| u.splitn(2, '/').next())
+            .get(header::USER_AGENT)
+            .and_then(|u| u.to_str().unwrap().splitn(2, '/').next())
         {
             None | Some("Wget") | Some("curl") | Some("HTTPie") => {
-                Outcome::Success(IsPlaintextRequest(true))
+                ok(IsPlaintextRequest(true))
             }
-            _ => Outcome::Success(IsPlaintextRequest(false)),
+            _ => ok(IsPlaintextRequest(false)),
         }
     }
 }
@@ -47,21 +47,25 @@ impl<'a, 'r> FromRequest<'a, 'r> for IsPlaintextRequest {
 ///
 /// The inner value of this `HostHeader` will be `None` if there was no Host header
 /// on the request.
-pub struct HostHeader<'a>(pub Option<&'a str>);
+pub struct HostHeader(pub Option<String>);
 
-impl<'a> Deref for HostHeader<'a> {
-    type Target = Option<&'a str>;
+impl Deref for HostHeader {
+    type Target = Option<String>;
 
-    fn deref(&self) -> &Option<&'a str> {
+    fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
 
-#[async_trait]
-impl<'a, 'r> FromRequest<'a, 'r> for HostHeader<'a> {
-    type Error = ();
+impl FromRequest for HostHeader {
+    type Error = actix_web::Error;
+    type Future = futures::future::Ready<Result<Self, Self::Error>>;
+    type Config = ();
 
-    async fn from_request(request: &'a Request<'r>) -> Outcome<HostHeader<'a>, ()> {
-        Outcome::Success(HostHeader(request.headers().get_one("Host")))
+    fn from_request(req: &HttpRequest, _payload: &mut Payload) -> Self::Future {
+        match req.headers().get(header::HOST) {
+            None => ok(Self(None)),
+            Some(h) => ok(Self(h.to_str().ok().map(|f| f.to_string())))
+        }
     }
 }
