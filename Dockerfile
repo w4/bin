@@ -1,6 +1,8 @@
 FROM rust:1.34.2-slim-stretch AS builder
 RUN rustup install nightly-x86_64-unknown-linux-gnu
 
+RUN apt update && apt install -y libclang-dev
+
 COPY . /sources
 WORKDIR /sources
 RUN cargo +nightly build --release
