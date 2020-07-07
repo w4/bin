@@ -12,7 +12,6 @@ use owning_ref::OwningRef;
 
 use std::cell::RefCell;
 use std::env;
-use std::sync::{PoisonError};
 
 use tokio::sync::{RwLock, RwLockReadGuard};
 

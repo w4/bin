@@ -17,7 +17,7 @@ rand = { version = "0.7", features = ["nightly"] }
 gpw = "0.1"
 syntect = "4.1"
 serde_derive = "1.0"
-tokio = { version = "0.2", features = ["sync"] }
+tokio = { version = "0.2", features = ["sync", "macros"] }
 async-trait = "0.1"
 
 [profile.release]

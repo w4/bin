@@ -25,7 +25,6 @@ use rocket::response::Redirect;
 use rocket::Data;
 
 use std::borrow::Cow;
-use std::io::Read;
 
 use tokio::io::AsyncReadExt;
 
@@ -125,8 +124,14 @@ async fn show_paste(key: String, plaintext: IsPlaintextRequest) -> Result<Conten
     }
 }
 
-fn main() {
-    rocket::ignite()
+#[tokio::main]
+async fn main() {
+    let result = rocket::ignite()
         .mount("/", routes![index, submit, submit_raw, show_paste])
-        .launch();
+        .launch()
+        .await;
+
+    if let Err(e) = result {
+        eprintln!("Failed to launch Rocket: {:#?}", e);
+    }
 }
