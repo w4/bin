@@ -10,7 +10,7 @@ edition = "2018"
 [dependencies]
 owning_ref = "0.4"
 linked-hash-map = "0.5"
-rocket = { git = "https://github.com/SergioBenitez/Rocket", branch = "async" }
+rocket = { git = "https://github.com/SergioBenitez/Rocket", branch = "master" }
 askama = "0.9"
 lazy_static = "1.4"
 rand = { version = "0.7", features = ["nightly"] }
