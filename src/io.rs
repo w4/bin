@@ -60,16 +60,15 @@ pub fn generate_id() -> String {
 pub async fn store_paste(id: String, content: String) {
     purge_old().await;
 
-    ENTRIES
-        .write()
-        .await
-        .insert(id, content);
+    ENTRIES.write().await.insert(id, content);
 }
 
 /// Get a paste by id.
 ///
 /// Returns `None` if the paste doesn't exist.
-pub async fn get_paste(id: &str) -> Option<RwLockReadGuardRef<'_, LinkedHashMap<String, String>, String>> {
+pub async fn get_paste(
+    id: &str,
+) -> Option<RwLockReadGuardRef<'_, LinkedHashMap<String, String>, String>> {
     // need to box the guard until owning_ref understands Pin is a stable address
     let or = RwLockReadGuardRef::new(Box::new(ENTRIES.read().await));
 

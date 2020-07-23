@@ -64,8 +64,11 @@ async fn submit(input: Form<IndexForm>) -> Redirect {
 #[put("/", data = "<input>")]
 async fn submit_raw(input: Data, host: HostHeader<'_>) -> Result<String, Status> {
     let mut data = String::new();
-    input.open().take(1024 * 1000)
-        .read_to_string(&mut data).await
+    input
+        .open()
+        .take(1024 * 1000)
+        .read_to_string(&mut data)
+        .await
         .map_err(|_| Status::InternalServerError)?;
 
     let id = generate_id();
@@ -108,7 +111,7 @@ async fn show_paste(key: String, plaintext: IsPlaintextRequest) -> Result<Conten
             None => String::from(RawStr::from_str(entry).html_escape()),
         };
 
-        // Add <code> tags to enable line numbering with CSS 
+        // Add <code> tags to enable line numbering with CSS
         let html = format!(
             "<code>{}</code>",
             code_highlighted.replace("\n", "\n</code><code>")
