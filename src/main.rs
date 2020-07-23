@@ -111,7 +111,7 @@ async fn show_paste(key: String, plaintext: IsPlaintextRequest) -> Result<Conten
         // Add <code> tags to enable line numbering with CSS 
         let html = format!(
             "<code>{}</code>",
-            code_highlighted.replace("\n", "</code><code>")
+            code_highlighted.replace("\n", "\n</code><code>")
         );
 
         let content = MarkupDisplay::new_safe(Cow::Borrowed(&html), AskamaHtml);
