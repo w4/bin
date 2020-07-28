@@ -14,4 +14,4 @@ COPY --from=builder /sources/target/release/bin /pastebin
 
 USER nobody
 EXPOSE 8000
-ENTRYPOINT ["/pastebin"]
+ENTRYPOINT ["/pastebin", "0.0.0.0:8000"]
