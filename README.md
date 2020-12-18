@@ -45,3 +45,17 @@ hello world
 ##### how does syntax highlighting work?
 
 To get syntax highlighting you need to add the file extension at the end of your paste URL.
+
+##### running it behind Apache httpd as reverse proxy
+Add the following to your httpd.conf file:
+```
+LoadModule substitute_module modules/mod_substitute.so
+...
+<Location /bin/>
+    ProxyPass http://localhost:80/
+    ProxyPassReverse /
+    AddOutputFilterByType SUBSTITUTE text/html
+    Substitute "s|action=\"/\"|action=\"/bin/\"|"
+</Location>
+```
+It exposes bin on http://HOST/bin
