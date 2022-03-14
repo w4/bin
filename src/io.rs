@@ -41,7 +41,8 @@ pub fn generate_id() -> String {
         thread_rng()
             .sample_iter(&Alphanumeric)
             .take(6)
-            .collect::<String>()
+            .map(char::from)
+            .collect()
     })
 }
 

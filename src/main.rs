@@ -33,7 +33,7 @@ pub struct BinArgs {
     max_paste_size: usize,
 }
 
-#[actix_rt::main]
+#[actix_web::main]
 async fn main() -> std::io::Result<()> {
     if std::env::var_os("RUST_LOG").is_none() {
         std::env::set_var("RUST_LOG", "INFO");
