@@ -1,9 +1,10 @@
 use std::ops::Deref;
 
-use actix_web::{FromRequest, HttpRequest, HttpMessage};
-use actix_web::dev::Payload;
-use actix_web::http::header;
-
+use actix_web::{
+    dev::Payload,
+    http::header::{self, HeaderValue},
+    FromRequest, HttpMessage, HttpRequest,
+};
 use futures::future::ok;
 
 /// Holds a value that determines whether or not this request wanted a plaintext response.
@@ -23,7 +24,6 @@ impl Deref for IsPlaintextRequest {
 impl FromRequest for IsPlaintextRequest {
     type Error = actix_web::Error;
     type Future = futures::future::Ready<Result<Self, Self::Error>>;
-    type Config = ();
 
     fn from_request(req: &HttpRequest, _payload: &mut Payload) -> Self::Future {
         if req.content_type() == "text/plain" {
@@ -33,11 +33,9 @@ impl FromRequest for IsPlaintextRequest {
         match req
             .headers()
             .get(header::USER_AGENT)
-            .and_then(|u| u.to_str().unwrap().splitn(2, '/').next())
+            .and_then(|u| u.to_str().unwrap().split('/').next())
         {
-            None | Some("Wget") | Some("curl") | Some("HTTPie") => {
-                ok(IsPlaintextRequest(true))
-            }
+            None | Some("Wget" | "curl" | "HTTPie") => ok(IsPlaintextRequest(true)),
             _ => ok(IsPlaintextRequest(false)),
         }
     }
@@ -47,25 +45,13 @@ impl FromRequest for IsPlaintextRequest {
 ///
 /// The inner value of this `HostHeader` will be `None` if there was no Host header
 /// on the request.
-pub struct HostHeader(pub Option<String>);
-
-impl Deref for HostHeader {
-    type Target = Option<String>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
+pub struct HostHeader(pub Option<HeaderValue>);
 
 impl FromRequest for HostHeader {
     type Error = actix_web::Error;
     type Future = futures::future::Ready<Result<Self, Self::Error>>;
-    type Config = ();
 
     fn from_request(req: &HttpRequest, _payload: &mut Payload) -> Self::Future {
-        match req.headers().get(header::HOST) {
-            None => ok(Self(None)),
-            Some(h) => ok(Self(h.to_str().ok().map(|f| f.to_string())))
-        }
+        ok(Self(req.headers().get(header::HOST).cloned()))
     }
 }

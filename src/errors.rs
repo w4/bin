@@ -1,40 +1,42 @@
-use actix_web::{web, http::header, body::Body, HttpResponse, ResponseError, http::StatusCode};
+use actix_web::{body::BoxBody, http::header, http::StatusCode, web, HttpResponse, ResponseError};
 
-use std::fmt::{Write, Formatter};
+use std::fmt::{Formatter, Write};
 
 macro_rules! impl_response_error_for_http_resp {
-    ($tt:tt) => {
-        impl ResponseError for $tt {
+    ($ty:ty, $path:expr, $status:expr) => {
+        impl ResponseError for $ty {
             fn error_response(&self) -> HttpResponse {
                 HtmlResponseError::error_response(self)
             }
         }
-    }
+
+        impl std::fmt::Display for $ty {
+            fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+                write!(f, "{}", include_str!($path))
+            }
+        }
+
+        impl HtmlResponseError for $ty {
+            fn status_code(&self) -> StatusCode {
+                $status
+            }
+        }
+    };
 }
 
 #[derive(Debug)]
 pub struct NotFound;
-impl std::fmt::Display for NotFound {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", include_str!("../templates/404.html"))
-    }
-}
-impl HtmlResponseError for NotFound {
-    fn status_code(&self) -> StatusCode {
-        StatusCode::NOT_FOUND
-    }
-}
-impl_response_error_for_http_resp!(NotFound);
+
+impl_response_error_for_http_resp!(NotFound, "../templates/404.html", StatusCode::NOT_FOUND);
 
 #[derive(Debug)]
 pub struct InternalServerError(pub Box<dyn std::error::Error>);
-impl std::fmt::Display for InternalServerError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", include_str!("../templates/500.html"))
-    }
-}
-impl HtmlResponseError for InternalServerError {}
-impl_response_error_for_http_resp!(InternalServerError);
+
+impl_response_error_for_http_resp!(
+    InternalServerError,
+    "../templates/500.html",
+    StatusCode::INTERNAL_SERVER_ERROR
+);
 
 pub trait HtmlResponseError: ResponseError {
     fn status_code(&self) -> StatusCode {
@@ -49,6 +51,6 @@ pub trait HtmlResponseError: ResponseError {
             header::CONTENT_TYPE,
             header::HeaderValue::from_static("text/html; charset=utf-8"),
         );
-        resp.set_body(Body::from(buf))
+        resp.set_body(BoxBody::new(buf))
     }
 }
