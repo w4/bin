@@ -9,12 +9,11 @@
         font-family: inherit;
         font-size: 1rem;
         line-height: inherit;
-        counter-reset: line;        
+        counter-reset: line;
     }
     code {
         counter-increment: line;
     }
-      
     code::before {
         content: counter(line);
         display: inline-block;
@@ -24,8 +23,10 @@
         color: #888;
         -webkit-user-select: none;
     }
-
-
 {% endblock styles %}
+
+{% block head %}
+    <link rel="stylesheet" type="text/css" href="highlight.css" />
+{% endblock head %}
 
 {% block content %}<pre>{{ content|safe }}</pre>{% endblock content %}

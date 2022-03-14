@@ -1,18 +1,14 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     
     <title>bin.</title>
-
     <link rel="help" href="https://github.com/w4/bin">
-
     <style>
         * { box-sizing: border-box; }
-
         html, body { margin: 0; }
-
         body {
             height: 100vh;
             padding: 2rem;
@@ -20,13 +16,11 @@
             color: #B0BEC5;
             font-family: 'Courier New', Courier, monospace;
             line-height: 1.1;
-
             display: flex;
         }
-
-        {% block styles %}
-        {% endblock styles %}
+        {% block styles %}{% endblock styles %}
     </style>
+    {% block head %}{% endblock head %}
 </head>
 <body>{% block content %}{% endblock content %}</body>
 </html>

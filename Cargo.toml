@@ -1,24 +1,31 @@
 [package]
 name = "bin"
-version = "1.0.5"
+version = "2.0.0"
 description = "a paste bin."
 repository = "https://github.com/w4/bin"
 license = "WTFPL OR 0BSD"
 authors = ["Jordan Doyle <jordan@doyle.la>"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
-owning_ref = "0.4"
+argh = "0.1"
+log = "0.4"
+pretty_env_logger = "0.4"
 linked-hash-map = "0.5"
-rocket = { git = "https://github.com/SergioBenitez/Rocket", branch = "master" }
-askama = "0.9"
-lazy_static = "1.4"
-rand = { version = "0.7", features = ["nightly"] }
+once_cell = "1.10"
+parking_lot = "0.12"
+bytes = { version = "1.1", features = ["serde"] }
+serde = { version = "1.0", features = ["derive"] }
+rand = { version = "0.8" }
 gpw = "0.1"
-syntect = "4.1"
-serde_derive = "1.0"
-tokio = { version = "0.2", features = ["sync", "macros"] }
-async-trait = "0.1"
+actix = "0.13"
+actix-web = "4.0"
+htmlescape = "0.3"
+askama = "0.11"
+bat = "0.20"
+syntect = "4.6"
+tokio = { version = "1.17", features = ["sync"] }
+futures = "0.3"
 
 [profile.release]
 lto = true

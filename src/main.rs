@@ -1,90 +1,126 @@
-#![feature(proc_macro_hygiene, decl_macro)]
+#![deny(clippy::pedantic)]
+#![allow(clippy::unused_async)]
 
-#[macro_use]
-extern crate lazy_static;
-
-#[macro_use]
-extern crate rocket;
-
-extern crate askama;
-
+mod errors;
 mod highlight;
 mod io;
 mod params;
 
-use highlight::highlight;
-use io::{generate_id, get_paste, store_paste};
-use params::{HostHeader, IsPlaintextRequest};
+use crate::{
+    errors::{InternalServerError, NotFound},
+    highlight::highlight,
+    io::{generate_id, get_paste, store_paste, PasteStore},
+    params::{HostHeader, IsPlaintextRequest},
+};
 
+use actix_web::{
+    http::header,
+    web::{self, Bytes, Data, FormConfig, PayloadConfig},
+    App, Error, HttpRequest, HttpResponse, HttpServer, Responder,
+};
 use askama::{Html as AskamaHtml, MarkupDisplay, Template};
+use log::{error, info};
+use once_cell::sync::Lazy;
+use std::{
+    borrow::Cow,
+    net::{IpAddr, Ipv4Addr, SocketAddr},
+};
+use syntect::html::{css_for_theme_with_class_style, ClassStyle};
 
-use rocket::http::{ContentType, RawStr, Status};
-use rocket::request::Form;
-use rocket::response::content::{Content, Html};
-use rocket::response::Redirect;
-use rocket::Data;
+#[derive(argh::FromArgs, Clone)]
+/// a pastebin.
+pub struct BinArgs {
+    /// socket address to bind to (default: 127.0.0.1:8820)
+    #[argh(
+        positional,
+        default = "SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 8820)"
+    )]
+    bind_addr: SocketAddr,
+    /// maximum amount of pastes to store before rotating (default: 1000)
+    #[argh(option, default = "1000")]
+    buffer_size: usize,
+    /// maximum paste size in bytes (default. 32kB)
+    #[argh(option, default = "32 * 1024")]
+    max_paste_size: usize,
+}
 
-use std::borrow::Cow;
+#[actix_web::main]
+async fn main() -> std::io::Result<()> {
+    if std::env::var_os("RUST_LOG").is_none() {
+        std::env::set_var("RUST_LOG", "INFO");
+    }
+    pretty_env_logger::init();
 
-use tokio::io::AsyncReadExt;
+    let args: BinArgs = argh::from_env();
 
-///
-/// Homepage
-///
+    let store = Data::new(PasteStore::default());
+
+    let server = HttpServer::new({
+        let args = args.clone();
+
+        move || {
+            App::new()
+                .app_data(store.clone())
+                .app_data(PayloadConfig::default().limit(args.max_paste_size))
+                .app_data(FormConfig::default().limit(args.max_paste_size))
+                .wrap(actix_web::middleware::Compress::default())
+                .route("/", web::get().to(index))
+                .route("/", web::post().to(submit))
+                .route("/", web::put().to(submit_raw))
+                .route("/", web::head().to(HttpResponse::MethodNotAllowed))
+                .route("/highlight.css", web::get().to(highlight_css))
+                .route("/{paste}", web::get().to(show_paste))
+                .route("/{paste}", web::head().to(HttpResponse::MethodNotAllowed))
+                .default_service(web::to(|req: HttpRequest| async move {
+                    error!("Couldn't find resource {}", req.uri());
+                    HttpResponse::from_error(NotFound)
+                }))
+        }
+    });
+
+    info!("Listening on http://{}", args.bind_addr);
+
+    server.bind(args.bind_addr)?.run().await
+}
 
 #[derive(Template)]
 #[template(path = "index.html")]
 struct Index;
 
-#[get("/")]
-fn index() -> Result<Html<String>, Status> {
-    Index
-        .render()
-        .map(Html)
-        .map_err(|_| Status::InternalServerError)
+async fn index(req: HttpRequest) -> Result<HttpResponse, Error> {
+    render_template(&req, &Index)
 }
 
-///
-/// Submit Paste
-///
-
-#[derive(FromForm)]
+#[derive(serde::Deserialize)]
 struct IndexForm {
-    val: String,
+    val: Bytes,
 }
 
-#[post("/", data = "<input>")]
-async fn submit(input: Form<IndexForm>) -> Redirect {
+async fn submit(input: web::Form<IndexForm>, store: Data<PasteStore>) -> impl Responder {
     let id = generate_id();
-    let uri = uri!(show_paste: &id);
-    store_paste(id, input.into_inner().val).await;
-    Redirect::to(uri)
+    let uri = format!("/{}", &id);
+    store_paste(&store, id, input.into_inner().val);
+    HttpResponse::Found()
+        .append_header((header::LOCATION, uri))
+        .finish()
 }
 
-#[put("/", data = "<input>")]
-async fn submit_raw(input: Data, host: HostHeader<'_>) -> Result<String, Status> {
-    let mut data = String::new();
-    input
-        .open()
-        .take(1024 * 1000)
-        .read_to_string(&mut data)
-        .await
-        .map_err(|_| Status::InternalServerError)?;
-
+async fn submit_raw(
+    data: Bytes,
+    host: HostHeader,
+    store: Data<PasteStore>,
+) -> Result<String, Error> {
     let id = generate_id();
-    let uri = uri!(show_paste: &id);
+    let uri = if let Some(Ok(host)) = host.0.as_ref().map(|v| std::str::from_utf8(v.as_bytes())) {
+        format!("https://{}/{}", host, id)
+    } else {
+        format!("/{}", id)
+    };
 
-    store_paste(id, data).await;
+    store_paste(&store, id, data);
 
-    match *host {
-        Some(host) => Ok(format!("https://{}{}", host, uri)),
-        None => Ok(format!("{}", uri)),
-    }
+    Ok(uri)
 }
-
-///
-/// Show paste page
-///
 
 #[derive(Template)]
 #[template(path = "paste.html")]
@@ -92,49 +128,66 @@ struct ShowPaste<'a> {
     content: MarkupDisplay<AskamaHtml, Cow<'a, String>>,
 }
 
-#[get("/<key>")]
-async fn show_paste(key: String, plaintext: IsPlaintextRequest) -> Result<Content<String>, Status> {
+async fn show_paste(
+    req: HttpRequest,
+    key: actix_web::web::Path<String>,
+    plaintext: IsPlaintextRequest,
+    store: Data<PasteStore>,
+) -> Result<HttpResponse, Error> {
     let mut splitter = key.splitn(2, '.');
-    let key = splitter.next().ok_or_else(|| Status::NotFound)?;
+    let key = splitter.next().unwrap();
     let ext = splitter.next();
 
-    let entry = &*get_paste(key).await.ok_or_else(|| Status::NotFound)?;
+    let entry = get_paste(&store, key).ok_or(NotFound)?;
 
     if *plaintext {
-        Ok(Content(ContentType::Plain, entry.to_string()))
+        Ok(HttpResponse::Ok()
+            .content_type("text/plain; charset=utf-8")
+            .body(entry))
     } else {
+        let data = std::str::from_utf8(entry.as_ref())?;
+
         let code_highlighted = match ext {
-            Some(extension) => match highlight(&entry, extension) {
+            Some(extension) => match highlight(data, extension) {
                 Some(html) => html,
-                None => return Err(Status::NotFound),
+                None => return Err(NotFound.into()),
             },
-            None => String::from(RawStr::from_str(entry).html_escape()),
+            None => htmlescape::encode_minimal(data),
         };
 
         // Add <code> tags to enable line numbering with CSS
         let html = format!(
             "<code>{}</code>",
-            code_highlighted.replace("\n", "\n</code><code>")
+            code_highlighted.replace('\n', "</code><code>")
         );
 
         let content = MarkupDisplay::new_safe(Cow::Borrowed(&html), AskamaHtml);
 
-        let template = ShowPaste { content };
-        match template.render() {
-            Ok(html) => Ok(Content(ContentType::HTML, html)),
-            Err(_) => Err(Status::InternalServerError),
-        }
+        render_template(&req, &ShowPaste { content })
     }
 }
 
-#[tokio::main]
-async fn main() {
-    let result = rocket::ignite()
-        .mount("/", routes![index, submit, submit_raw, show_paste])
-        .launch()
-        .await;
+async fn highlight_css() -> HttpResponse {
+    static CSS: Lazy<Bytes> = Lazy::new(|| {
+        highlight::BAT_ASSETS.with(|s| {
+            Bytes::from(css_for_theme_with_class_style(
+                s.get_theme("OneHalfDark"),
+                ClassStyle::Spaced,
+            ))
+        })
+    });
 
-    if let Err(e) = result {
-        eprintln!("Failed to launch Rocket: {:#?}", e);
+    HttpResponse::Ok()
+        .content_type("text/css")
+        .body(CSS.clone())
+}
+
+fn render_template<T: Template>(req: &HttpRequest, template: &T) -> Result<HttpResponse, Error> {
+    match template.render() {
+        Ok(html) => Ok(HttpResponse::Ok().content_type("text/html").body(html)),
+        Err(e) => {
+            error!("Error while rendering template for {}: {}", req.uri(), e);
+            Err(InternalServerError(Box::new(e)).into())
+        }
     }
 }
