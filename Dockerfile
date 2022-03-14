@@ -1,15 +1,12 @@
-FROM rust:1.45-slim-stretch AS builder
-RUN rustup install nightly-x86_64-unknown-linux-gnu
-
-RUN apt update && apt install -y libclang-dev
+FROM rust:1-slim AS builder
 
 COPY . /sources
 WORKDIR /sources
-RUN cargo +nightly build --release
+RUN cargo build --release
 RUN chown nobody:nogroup /sources/target/release/bin
 
 
-FROM debian:stretch-slim
+FROM debian:bullseye-slim
 COPY --from=builder /sources/target/release/bin /pastebin
 
 USER nobody
