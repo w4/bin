@@ -23,7 +23,7 @@ actix-web = "4.0"
 htmlescape = "0.3"
 askama = "0.11"
 bat = "0.20"
-syntect = "4.6"
+syntect = "5.0"
 tokio = { version = "1.20", features = ["sync"] }
 futures = "0.3"
 
