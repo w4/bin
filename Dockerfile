@@ -1,15 +1,17 @@
 FROM rust:1-slim AS builder
 
-RUN apt update && apt install -y libclang-dev
+RUN apt-get update && \
+    apt-get install -y libclang-dev musl-tools
+RUN rustup target add x86_64-unknown-linux-musl
 
 COPY . /sources
 WORKDIR /sources
-RUN cargo build --release
-RUN chown nobody:nogroup /sources/target/release/bin
-
+# force static linking with target to avoid glibc issues
+RUN cargo build --release --target x86_64-unknown-linux-musl
+RUN chown nobody:nogroup /sources/target/x86_64-unknown-linux-musl/release/bin
 
 FROM debian:bullseye-slim
-COPY --from=builder /sources/target/release/bin /pastebin
+COPY --from=builder /sources/target/x86_64-unknown-linux-musl/release/bin /pastebin
 
 USER nobody
 EXPOSE 8000
