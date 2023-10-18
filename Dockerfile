@@ -10,7 +10,7 @@ WORKDIR /sources
 RUN cargo build --release --target x86_64-unknown-linux-musl
 RUN chown nobody:nogroup /sources/target/x86_64-unknown-linux-musl/release/bin
 
-FROM debian:bullseye-slim
+FROM alpine:latest
 COPY --from=builder /sources/target/x86_64-unknown-linux-musl/release/bin /pastebin
 
 USER nobody
