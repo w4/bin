@@ -14,16 +14,20 @@ thread_local!(pub static BAT_ASSETS: HighlightingAssets = HighlightingAssets::fr
 pub fn highlight(content: &str, ext: &str) -> Option<String> {
     static SS: Lazy<SyntaxSet> = Lazy::new(SyntaxSet::load_defaults_newlines);
 
-    BAT_ASSETS.with(|f| {
-        let ss = f.get_syntax_set().ok().unwrap_or(&SS);
-        let syntax = ss.find_syntax_by_extension(ext)?;
-        let mut html_generator =
-            ClassedHTMLGenerator::new_with_class_style(syntax, ss, ClassStyle::Spaced);
-        for line in LinesWithEndings(content.trim()) {
-            html_generator.parse_html_for_line_which_includes_newline(line);
-        }
-        Some(html_generator.finalize())
-    })
+    BAT_ASSETS
+        .with(|f| {
+            let ss = f.get_syntax_set().ok().unwrap_or(&SS);
+            let Some(syntax) = ss.find_syntax_by_extension(ext) else {
+                return Ok(None);
+            };
+            let mut html_generator =
+                ClassedHTMLGenerator::new_with_class_style(syntax, ss, ClassStyle::Spaced);
+            for line in LinesWithEndings(content.trim()) {
+                html_generator.parse_html_for_line_which_includes_newline(line)?;
+            }
+            Ok::<_, syntect::Error>(Some(html_generator.finalize()))
+        })
+        .unwrap_or_else(|_| Some(content.to_string()))
 }
 
 pub struct LinesWithEndings<'a>(&'a str);

@@ -170,10 +170,10 @@ async fn show_paste(
 async fn highlight_css() -> HttpResponse {
     static CSS: Lazy<Bytes> = Lazy::new(|| {
         highlight::BAT_ASSETS.with(|s| {
-            Bytes::from(css_for_theme_with_class_style(
-                s.get_theme("OneHalfDark"),
-                ClassStyle::Spaced,
-            ))
+            Bytes::from(
+                css_for_theme_with_class_style(s.get_theme("OneHalfDark"), ClassStyle::Spaced)
+                    .unwrap(),
+            )
         })
     });
 
