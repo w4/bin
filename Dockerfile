@@ -1,14 +1,14 @@
-FROM rust:1-slim-bookworm AS builder
-
-RUN apt update && apt install -y libclang-dev
+FROM rust:1-alpine AS builder
+RUN apk add --no-cache musl-dev
 
 COPY . /sources
 WORKDIR /sources
 RUN cargo build --release
 RUN chown nobody:nogroup /sources/target/release/bin
 
-FROM gcr.io/distroless/cc-debian12
+FROM scratch
 COPY --from=builder /sources/target/release/bin /pastebin
+COPY --from=builder /etc/passwd /etc/passwd
 
 USER nobody
 EXPOSE 8000
