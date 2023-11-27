@@ -46,7 +46,7 @@ pub trait HtmlResponseError: ResponseError {
     fn error_response(&self) -> HttpResponse {
         let mut resp = HttpResponse::new(HtmlResponseError::status_code(self));
         let mut buf = web::BytesMut::new();
-        let _ = write!(&mut buf, "{}", self);
+        let _ = write!(&mut buf, "{self}");
         resp.headers_mut().insert(
             header::CONTENT_TYPE,
             header::HeaderValue::from_static("text/html; charset=utf-8"),

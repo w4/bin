@@ -98,7 +98,7 @@ struct IndexForm {
 
 async fn submit(input: web::Form<IndexForm>, store: Data<PasteStore>) -> impl Responder {
     let id = generate_id();
-    let uri = format!("/{}", &id);
+    let uri = format!("/{id}");
     store_paste(&store, id, input.into_inner().val);
     HttpResponse::Found()
         .append_header((header::LOCATION, uri))
@@ -112,9 +112,9 @@ async fn submit_raw(
 ) -> Result<String, Error> {
     let id = generate_id();
     let uri = if let Some(Ok(host)) = host.0.as_ref().map(|v| std::str::from_utf8(v.as_bytes())) {
-        format!("https://{}/{}", host, id)
+        format!("https://{host}/{id}")
     } else {
-        format!("/{}", id)
+        format!("/{id}")
     };
 
     store_paste(&store, id, data);
@@ -186,7 +186,7 @@ fn render_template<T: Template>(req: &HttpRequest, template: &T) -> Result<HttpR
     match template.render() {
         Ok(html) => Ok(HttpResponse::Ok().content_type("text/html").body(html)),
         Err(e) => {
-            error!("Error while rendering template for {}: {}", req.uri(), e);
+            error!("Error while rendering template for {}: {e}", req.uri());
             Err(InternalServerError(Box::new(e)).into())
         }
     }
