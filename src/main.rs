@@ -112,9 +112,9 @@ async fn submit_raw(
 ) -> Result<String, Error> {
     let id = generate_id();
     let uri = if let Some(Ok(host)) = host.0.as_ref().map(|v| std::str::from_utf8(v.as_bytes())) {
-        format!("https://{host}/{id}")
+        format!("https://{host}/{id}\n")
     } else {
-        format!("/{id}")
+        format!("/{id}\n")
     };
 
     store_paste(&store, id, data);
