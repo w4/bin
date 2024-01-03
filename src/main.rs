@@ -130,7 +130,7 @@ struct ShowPaste<'a> {
 
 async fn show_paste(
     req: HttpRequest,
-    key: actix_web::web::Path<String>,
+    key: web::Path<String>,
     plaintext: IsPlaintextRequest,
     store: Data<PasteStore>,
 ) -> Result<HttpResponse, Error> {
