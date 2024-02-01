@@ -4,9 +4,9 @@ version = 3
 
 [[package]]
 name = "actix"
-version = "0.13.1"
+version = "0.13.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cba56612922b907719d4a01cf11c8d5b458e7d3dba946d0435f20f58d6795ed2"
+checksum = "dc9ef49f64074352f73ef9ec8c060a5f5799c96715c986a17f10933c3da2955c"
 dependencies = [
  "actix-macros",
  "actix-rt",
