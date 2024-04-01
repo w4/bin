@@ -24,7 +24,7 @@ htmlescape = "0.3"
 askama = "0.12"
 bat = "0.24"
 syntect = "5.1"
-tokio = { version = "1.35", features = ["sync"] }
+tokio = { version = "1.37", features = ["sync"] }
 futures = "0.3"
 
 [profile.release]
