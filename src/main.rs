@@ -42,6 +42,9 @@ pub struct BinArgs {
     /// maximum paste size in bytes (default. 32kB)
     #[argh(option, default = "32 * 1024")]
     max_paste_size: usize,
+    /// web path prefix (default "/")
+    #[argh(option, default = "\"/\".to_string()")]
+    path_prefix: String,
 }
 
 #[actix_web::main]
@@ -55,22 +58,38 @@ async fn main() -> std::io::Result<()> {
 
     let store = Data::new(PasteStore::default());
 
+    // if path_prefix arg doesn't end with "/", append it
+    let path_prefix = if args.path_prefix.ends_with('/') {
+        if args.path_prefix.starts_with('/') {
+            args.path_prefix.clone()
+        } else {
+            format!("/{}", args.path_prefix.clone())
+        }
+    } else if args.path_prefix.starts_with('/') {
+        args.path_prefix.clone()
+    } else {
+        format!("/{}/", args.path_prefix.clone())
+    };
+
     let server = HttpServer::new({
         let args = args.clone();
+        let path_prefix = path_prefix.clone();
+        let path_prefix_data = Data::new(path_prefix.clone());
 
         move || {
             App::new()
                 .app_data(store.clone())
+                .app_data(path_prefix_data.clone())
                 .app_data(PayloadConfig::default().limit(args.max_paste_size))
                 .app_data(FormConfig::default().limit(args.max_paste_size))
                 .wrap(actix_web::middleware::Compress::default())
-                .route("/", web::get().to(index))
-                .route("/", web::post().to(submit))
-                .route("/", web::put().to(submit_raw))
-                .route("/", web::head().to(HttpResponse::MethodNotAllowed))
-                .route("/highlight.css", web::get().to(highlight_css))
-                .route("/{paste}", web::get().to(show_paste))
-                .route("/{paste}", web::head().to(HttpResponse::MethodNotAllowed))
+                .route(&path_prefix, web::get().to(index))
+                .route(&path_prefix, web::post().to(submit))
+                .route(&path_prefix, web::put().to(submit_raw))
+                .route(&path_prefix, web::head().to(HttpResponse::MethodNotAllowed))
+                .route(&(path_prefix.clone() + "highlight.css"), web::get().to(highlight_css))
+                .route(&(path_prefix.clone() + "{paste}"), web::get().to(show_paste))
+                .route(&(path_prefix.clone() + "{paste}"), web::head().to(HttpResponse::MethodNotAllowed))
                 .default_service(web::to(|req: HttpRequest| async move {
                     error!("Couldn't find resource {}", req.uri());
                     HttpResponse::from_error(NotFound)
@@ -78,7 +97,7 @@ async fn main() -> std::io::Result<()> {
         }
     });
 
-    info!("Listening on http://{}", args.bind_addr);
+    info!("Listening on http://{}{}", args.bind_addr, path_prefix);
 
     server.bind(args.bind_addr)?.run().await
 }
@@ -96,9 +115,9 @@ struct IndexForm {
     val: Bytes,
 }
 
-async fn submit(input: web::Form<IndexForm>, store: Data<PasteStore>) -> impl Responder {
+async fn submit(input: web::Form<IndexForm>, store: Data<PasteStore>, path_prefix: Data<String>) -> impl Responder {
     let id = generate_id();
-    let uri = format!("/{id}");
+    let uri = format!("{}{id}", *path_prefix);
     store_paste(&store, id, input.into_inner().val);
     HttpResponse::Found()
         .append_header((header::LOCATION, uri))
@@ -109,12 +128,13 @@ async fn submit_raw(
     data: Bytes,
     host: HostHeader,
     store: Data<PasteStore>,
+    path_prefix: Data<String>
 ) -> Result<String, Error> {
     let id = generate_id();
     let uri = if let Some(Ok(host)) = host.0.as_ref().map(|v| std::str::from_utf8(v.as_bytes())) {
-        format!("https://{host}/{id}\n")
+        format!("https://{host}{}{id}\n", *path_prefix)
     } else {
-        format!("/{id}\n")
+        format!("{}{id}\n", *path_prefix)
     };
 
     store_paste(&store, id, data);
