@@ -1,7 +1,7 @@
 use actix_web::web::Bytes;
 use linked_hash_map::LinkedHashMap;
 use parking_lot::RwLock;
-use rand::{distributions::Alphanumeric, thread_rng, Rng};
+use rand::{distr::Alphanumeric, rng, Rng};
 use std::{cell::RefCell, sync::LazyLock};
 
 pub type PasteStore = RwLock<LinkedHashMap<String, Bytes>>;
@@ -28,7 +28,7 @@ pub fn generate_id() -> String {
     thread_local!(static KEYGEN: RefCell<gpw::PasswordGenerator> = RefCell::new(gpw::PasswordGenerator::default()));
 
     KEYGEN.with(|k| k.borrow_mut().next()).unwrap_or_else(|| {
-        thread_rng()
+        rng()
             .sample_iter(&Alphanumeric)
             .take(6)
             .map(char::from)

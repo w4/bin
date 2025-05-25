@@ -18,10 +18,9 @@ use actix_web::{
     web::{self, Bytes, Data, FormConfig, PayloadConfig},
     App, Error, HttpRequest, HttpResponse, HttpServer, Responder,
 };
-use askama::{Html as AskamaHtml, MarkupDisplay, Template};
+use askama::Template;
 use log::{error, info};
 use std::{
-    borrow::Cow,
     net::{IpAddr, Ipv4Addr, SocketAddr},
     sync::LazyLock,
 };
@@ -124,8 +123,8 @@ async fn submit_raw(
 
 #[derive(Template)]
 #[template(path = "paste.html")]
-struct ShowPaste<'a> {
-    content: MarkupDisplay<AskamaHtml, Cow<'a, String>>,
+struct ShowPaste {
+    content: String,
 }
 
 async fn show_paste(
@@ -156,12 +155,10 @@ async fn show_paste(
         };
 
         // Add <code> tags to enable line numbering with CSS
-        let html = format!(
+        let content = format!(
             "<code>{}</code>",
             code_highlighted.replace('\n', "</code><code>")
         );
-
-        let content = MarkupDisplay::new_safe(Cow::Borrowed(&html), AskamaHtml);
 
         render_template(&req, &ShowPaste { content })
     }
