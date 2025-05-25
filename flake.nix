@@ -47,6 +47,7 @@
               systemd.services.bin = {
                 enable = true;
                 wantedBy = [ "multi-user.target" ];
+                wants = [ "network-online.target" ];
                 after = [ "network-online.target" ];
                 serviceConfig = {
                   Type = "exec";
