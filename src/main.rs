@@ -20,10 +20,10 @@ use actix_web::{
 };
 use askama::{Html as AskamaHtml, MarkupDisplay, Template};
 use log::{error, info};
-use once_cell::sync::Lazy;
 use std::{
     borrow::Cow,
     net::{IpAddr, Ipv4Addr, SocketAddr},
+    sync::LazyLock,
 };
 use syntect::html::{css_for_theme_with_class_style, ClassStyle};
 
@@ -168,7 +168,7 @@ async fn show_paste(
 }
 
 async fn highlight_css() -> HttpResponse {
-    static CSS: Lazy<Bytes> = Lazy::new(|| {
+    static CSS: LazyLock<Bytes> = LazyLock::new(|| {
         highlight::BAT_ASSETS.with(|s| {
             Bytes::from(
                 css_for_theme_with_class_style(s.get_theme("OneHalfDark"), ClassStyle::Spaced)

@@ -1,5 +1,5 @@
 use bat::assets::HighlightingAssets;
-use once_cell::sync::Lazy;
+use std::sync::LazyLock;
 use syntect::{
     html::{ClassStyle, ClassedHTMLGenerator},
     parsing::SyntaxSet,
@@ -12,7 +12,7 @@ thread_local!(pub static BAT_ASSETS: HighlightingAssets = HighlightingAssets::fr
 ///
 /// Returns `None` if the extension isn't supported.
 pub fn highlight(content: &str, ext: &str) -> Option<String> {
-    static SS: Lazy<SyntaxSet> = Lazy::new(SyntaxSet::load_defaults_newlines);
+    static SS: LazyLock<SyntaxSet> = LazyLock::new(SyntaxSet::load_defaults_newlines);
 
     BAT_ASSETS
         .with(|f| {

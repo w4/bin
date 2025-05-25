@@ -1,13 +1,13 @@
 use actix_web::web::Bytes;
 use linked_hash_map::LinkedHashMap;
-use once_cell::sync::Lazy;
 use parking_lot::RwLock;
 use rand::{distributions::Alphanumeric, thread_rng, Rng};
-use std::cell::RefCell;
+use std::{cell::RefCell, sync::LazyLock};
 
 pub type PasteStore = RwLock<LinkedHashMap<String, Bytes>>;
 
-static BUFFER_SIZE: Lazy<usize> = Lazy::new(|| argh::from_env::<crate::BinArgs>().buffer_size);
+static BUFFER_SIZE: LazyLock<usize> =
+    LazyLock::new(|| argh::from_env::<crate::BinArgs>().buffer_size);
 
 /// Ensures `ENTRIES` is less than the size of `BIN_BUFFER_SIZE`. If it isn't then
 /// `ENTRIES.len() - BIN_BUFFER_SIZE` elements will be popped off the front of the map.
@@ -50,5 +50,5 @@ pub fn store_paste(entries: &PasteStore, id: String, content: Bytes) {
 /// Returns `None` if the paste doesn't exist.
 pub fn get_paste(entries: &PasteStore, id: &str) -> Option<Bytes> {
     // need to box the guard until owning_ref understands Pin is a stable address
-    entries.read().get(id).map(Bytes::clone)
+    entries.read().get(id).cloned()
 }
