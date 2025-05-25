@@ -5,7 +5,7 @@ description = "a paste bin."
 repository = "https://github.com/w4/bin"
 license = "WTFPL OR 0BSD"
 authors = ["Jordan Doyle <jordan@doyle.la>"]
-edition = "2021"
+edition = "2024"
 
 [dependencies]
 argh = "0.1"

@@ -1,4 +1,4 @@
-use actix_web::{body::BoxBody, http::header, http::StatusCode, web, HttpResponse, ResponseError};
+use actix_web::{HttpResponse, ResponseError, body::BoxBody, http::StatusCode, http::header, web};
 
 use std::fmt::{Formatter, Write};
 

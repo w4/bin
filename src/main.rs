@@ -9,14 +9,14 @@ mod params;
 use crate::{
     errors::{InternalServerError, NotFound},
     highlight::highlight,
-    io::{generate_id, get_paste, store_paste, PasteStore},
+    io::{PasteStore, generate_id, get_paste, store_paste},
     params::{HostHeader, IsPlaintextRequest},
 };
 
 use actix_web::{
+    App, Error, HttpRequest, HttpResponse, HttpServer, Responder,
     http::header,
     web::{self, Bytes, Data, FormConfig, PayloadConfig},
-    App, Error, HttpRequest, HttpResponse, HttpServer, Responder,
 };
 use askama::Template;
 use log::{error, info};
@@ -24,7 +24,7 @@ use std::{
     net::{IpAddr, Ipv4Addr, SocketAddr},
     sync::LazyLock,
 };
-use syntect::html::{css_for_theme_with_class_style, ClassStyle};
+use syntect::html::{ClassStyle, css_for_theme_with_class_style};
 
 #[derive(argh::FromArgs, Clone)]
 /// a pastebin.
@@ -45,10 +45,10 @@ pub struct BinArgs {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    if std::env::var_os("RUST_LOG").is_none() {
-        std::env::set_var("RUST_LOG", "INFO");
-    }
-    pretty_env_logger::init();
+    pretty_env_logger::formatted_builder()
+        .filter_level(log::LevelFilter::Info)
+        .parse_default_env()
+        .init();
 
     let args: BinArgs = argh::from_env();
 

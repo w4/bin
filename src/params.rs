@@ -1,9 +1,9 @@
 use std::ops::Deref;
 
 use actix_web::{
+    FromRequest, HttpMessage, HttpRequest,
     dev::Payload,
     http::header::{self, HeaderValue},
-    FromRequest, HttpMessage, HttpRequest,
 };
 use futures::future::ok;
 

@@ -1,7 +1,7 @@
 use actix_web::web::Bytes;
 use linked_hash_map::LinkedHashMap;
 use parking_lot::RwLock;
-use rand::{distr::Alphanumeric, rng, Rng};
+use rand::{Rng, distr::Alphanumeric, rng};
 use std::{cell::RefCell, sync::LazyLock};
 
 pub type PasteStore = RwLock<LinkedHashMap<String, Bytes>>;
