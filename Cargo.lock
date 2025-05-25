@@ -481,7 +481,7 @@ dependencies = [
 
 [[package]]
 name = "bin"
-version = "2.0.1"
+version = "2.0.2"
 dependencies = [
  "actix",
  "actix-web",
