@@ -58,3 +58,6 @@ hello world
 ##### how does syntax highlighting work?
 
 To get syntax highlighting you need to add the file extension at the end of your paste URL.
+
+## HEY JUST WANTED TO SAY YOU ARE DOING A GREAT JOB. KEEP IT UP
+
